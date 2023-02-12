@@ -19,7 +19,7 @@ The problem was that the port is already used by the docker container, so I just
 
 Now we can adapt the docker compose file to pull from the repository instead of building in directly.
 
-See [Repository]([img/Picture2.png](https://hub.docker.com/repository/docker/kaulex/my-node/general))
+See [Dockerhub](https://hub.docker.com/repository/docker/kaulex/my-node/general)
 
 ![](img/Picture3.png)
 ![](img/Picture4.png)
