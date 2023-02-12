@@ -1,96 +1,98 @@
-# ReST Web Service Example Light for Docker Compose Exercise
+# Exercise 3
+## Part 1
+Done
 
-> For this exercise, we provide a base [node](https://nodejs.org/en/)/[express](https://expressjs.com/) application, which should be used for CI/CD Pipeline.
-
-## Prerequisites
-* [Node.js](https://nodejs.org/en/)
-  * we recommend current [LTS](https://nodejs.org/dist/latest-v14.x/)
-
-
-## First Steps
-install current dependencies
-```console
-npm install
+## Part 2
+Fixed docker-compose and started the containers. Commands:
+```bash
+docker compose build
+docker compose up -d
 ```
 
-> What comes with this project?
-> * [express](https://expressjs.com/), fast web framework to create web-services
->   ```console
->   npm install --save express
->   ```
-> * [dotenv](https://www.npmjs.com/package/dotenv) to load custom environment variables from [`.env`](.env.EXAMPLE) file
->   ```console
->   npm install --save dotenv
->   ```
-> * [mysql2](https://www.npmjs.com/package/mysql2), module to work with MySQL database for persistence
->   ```console
->   npm install --save mysql2
->   ```
-> * [mocha](https://www.npmjs.com/package/mocha), JavaScript test framework for Node
->   ```console
->   npm install mocha --save-dev
->   ```
-> * [chai](https://www.npmjs.com/package/chai), assertion library, similar to Node's built-in assert. It makes testing much easier by giving you lots of assertions you can run against your code
->   ```console
->   npm install chai --save-dev
->   ```
+![](img/Picture1.png)
 
-> ### Project structure
-> * [`.env.EXAMPLE`](.env.EXAMPLE): example for `.env`. create a copy to set custom configurations
-> * [`package.json`](package.json): node configuration/dependencies/devDependencies file
-> * [`server.js`](server.js): start point for our web-service. setups express and starts listener.
-> * [`util`](util): directory for utility files
->   * [`config.js`](util/config.js): setup configurations, read/set environment variables (e.g. port)
-> * [`greetings`](greetings): directory for our 'greetings' resource
->   * [`controller.js`](greetings/controller.js): "business" logic to handle different HTTP calls on 'greetings' resource.
->   * [`index.js`](greetings/index.js): routing configuration for 'greetings' resource
->   * [`model.js`](greetings/model.js): db handler for 'greetings' resource
-> * [`test`](test): test cases
->   * [`greetings.js`](test/greetings.js): simple chai test for testing Node REST API
+The problem was that the port is already used by the docker container, so I just exposed the docker container on 8181 instead of 8080.
 
-Important for Dockerfile and Image Creation, there we only need node dependencies without testing / development devependencies
+![](img/Picture2.png)
 
+## Part 3
+
+Now we can adapt the docker compose file to pull from the repository instead of building in directly.
+
+See [Repository]([img/Picture2.png](https://hub.docker.com/repository/docker/kaulex/my-node/general))
+
+![](img/Picture3.png)
+![](img/Picture4.png)
+
+Docker compose for developers: (docker-compose.yml)
+```yml
+version: '3.8'
+
+services:
+  database-server:
+    # using .env file to configure e.g. version number or other currently static variables
+    image: mysql:latest
+    container_name: contdel-db-server
+    restart: always
+    # setting environment variables is possible within docker-compose.yml
+    environment:
+      MYSQL_DATABASE: 'contdel'
+      # So you don't have to use root, but you can if you like
+      MYSQL_USER: 'fhj'
+      # You can use whatever password you like
+      MYSQL_PASSWORD: 'password'
+      # Password for root access
+      MYSQL_ROOT_PASSWORD: 'password'
+    ports:
+      - '3306:3306'
+    # Where our data will be persisted
+    volumes:      
+      - ./mysql-data:/var/lib/mysql
+      - ./mysql-init-files:/docker-entrypoint-initdb.d
+    # check for status for depends_on conditions for api container start = service_healthy
+    # otherwise no connection is possible at startup, alternative will be to refactor node implementation
+    healthcheck:
+        test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+        timeout: 20s
+        retries: 10
+        start_period: 20s # Estimated time to boot.
+
+  # using redis for caching server, therefor we will use existing image
+  # currently we not need any special configuration, so the docker-compose configuration is simple
+  cache-server:
+    image: redis:latest
+    container_name: contdel-cache-server
+    ports:
+      - '6379:6379'
+    restart: always
+
+  # at last we build our own image by using Dockerfile in Sub-Directory
+  api:
+    container_name: contdel-api-server
+    build: ./app
+    # container will be started after dependencies are fulfilled
+    depends_on:
+      cache-server:
+        condition: service_started
+      database-server:
+        condition: service_healthy
+    ports:
+      - "8181:8181"
+    environment:
+      SERVER_PORT: 8181
+      DB_SERVER: database-server
+      CACHE_SERVER: cache-server
 ```
-  RUN npm ci --silent --only=production
+
+For testers we replace the container build with the image:
+```yml
+  api:
+    image: kaulex/my-node:latest
 ```
 
-
-start application server
-```bashvb 
-node server.js
-## or
-npm start
+And start it with following command:
+```bash
+docker compose -f docker-compose.tester.yml up -d
 ```
 
-test application server
-```bashvb 
-npm test
-```
-
-## Quick Overview about REST Structure Light
-
-depending on the REST example of notes management, we will take a quick look at important relations between REST, HTTP and SQL.
-
-| 	URL		      | 	HTTP Verb	  |   	CRUD 	    |	SQL   		| 	comment 	   		           | Redis Caching |
-|-------------|--------------|---------------|-----------|---------------------------|-------------------|
-| /greetings      | GET 			    | 	READ		    |	SELECT  	| read **all** greetings  	 | Yes |
-| /greetings/1    | GET 			    | 	READ		    |	SELECT  	| read **one** greeting 	   | not implemented |
-
-check it out with your browser, [cURL](https://curl.se/) or [Postman](https://www.postman.com/) for example.
-
-use [Postman Collection](https://www.postman.com/collections/68249abda8f8d5ec3f15) for quick start and to do first API calls
-
-
-## References
-* [Node.js - Das umfassende Handbuch](https://www.rheinwerk-verlag.de/nodejs-das-umfassende-handbuch/)
-
-## Useful links
-* [express framework](https://expressjs.com/)
-* [SQLite](https://www.sqlite.org/docs.html)
-* [HTTP Methods](https://restfulapi.net/http-methods/)
-* [HTTP Status Codes](https://restfulapi.net/http-status-codes/)
-* [JavaScript: arrow function vs. regular function](https://levelup.gitconnected.com/arrow-function-vs-regular-function-in-javascript-b6337fb87032)
-
-## Authors
-* Prepared by Harald Schwab, Web Service Development, Notes Example
-* Prepared by Michael Ulm, Continuous Delivery
+![](img/Picture6.png)
