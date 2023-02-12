@@ -3,7 +3,7 @@ version: '3.8'
 services:
   database-server:
     # using .env file to configure e.g. version number or other currently static variables
-    image: mysql:${MYSQL_VERSION}
+    image: mysql:latest
     container_name: contdel-db-server
     restart: always
     # setting environment variables is possible within docker-compose.yml
@@ -32,7 +32,7 @@ services:
   # using redis for caching server, therefor we will use existing image
   # currently we not need any special configuration, so the docker-compose configuration is simple
   cache-server:
-    image: redis
+    image: redis:latest
     container_name: contdel-cache-server
     ports:
       - '6379:6379'
@@ -49,7 +49,7 @@ services:
       database-server:
         condition: service_healthy
     ports:
-      - "8080:8181"
+      - "8181:8181"
     environment:
       SERVER_PORT: 8181
       DB_SERVER: database-server
