@@ -1,0 +1,39 @@
+{
+  "name": "rest-example-web-service",
+  "version": "1.0.0",
+  "description": "Education example for ReST web-service",
+  "main": "server.js",
+  "scripts": {
+    "start": "node .",
+    "test": "mocha test/*.js --exit"
+  },
+  "contributors": [
+    {
+      "name": "Michael Ulm",
+      "email": "michael.ulm@fh-joanneum.at"
+    },
+    {
+      "name": "Harald Schwab",
+      "email": "harald.schwab2@fh-joanneum.at"
+    }
+  ],
+  "keywords": [
+    "rest",
+    "node",
+    "express",
+    "webservice"
+  ],
+  "author": "",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "mysql2": "^2.3.3",
+    "redis": "^4.5.1"
+  },
+  "devDependencies": {
+    "chai": "^4.3.0",
+    "chai-http": "^4.3.0",
+    "mocha": "^10.2.0"
+  }
+}
